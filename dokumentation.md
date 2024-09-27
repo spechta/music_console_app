@@ -11,7 +11,7 @@ Diese Dokumentation beschreibt die Implementierung und Nutzung einer Musik-Anwen
 1. **Hinzufügen von neuen Songs**: Der Benutzer kann neue Songs zur Bibliothek hinzufügen.
 2. **Playlist erstellen**: Der Benutzer kann Playlists erstellen und verwalten.
 3. **Song zu einer Playlist hinzufügen**: Vorhandene Songs können Playlists hinzugefügt werden.
-4. **Songs durchsuchen**: Verschiedene Suchalgorithmen (Lineare Suche, Hash-Suche, LCG-Suche) können verwendet werden, um Songs anhand ihrer Attribute zu finden.
+4. **Songs durchsuchen**: Verschiedene Suchalgorithmen (Lineare-Search, Hash-Search, LCG-Search) können verwendet werden, um Songs anhand ihrer Attribute zu finden.
 5. **Songs sortieren**: Verschiedene Sortieralgorithmen (Python Built-in Sort, Quicksort, Slowsort) stehen zur Verfügung.
 6. **Anzeige der Songs und Playlists**: Alle Songs und Playlists können angezeigt werden.
 7. **Speichern und Laden der Daten**: Die Daten können gespeichert und wieder geladen werden.

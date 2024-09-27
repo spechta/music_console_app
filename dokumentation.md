@@ -42,6 +42,8 @@ Diese Dokumentation beschreibt die Implementierung und Nutzung einer Musik-Anwen
    - Funktionsweise des Hauptmenüs  
    - Anwendungsablauf
 
+6. **Ergebnisse**  
+
 ---
 
 ## Seite 2: Klassenstruktur
@@ -209,3 +211,15 @@ Die `main_menu`-Methode steuert den Ablauf der Anwendung und stellt das Hauptmen
 
 ### Anwendungsablauf
 Der Benutzer kann durch die Auswahl im Menü verschiedene Funktionen der Anwendung aufrufen. Die ausgewählten Aktionen werden in der `main_menu`-Schleife ausgeführt, bis der Benutzer die Option „Speichern und Beenden“ auswählt, um die Daten zu speichern und die Anwendung zu schließen.
+
+## Seite 6: Ergebnisse
+   ###Search
+   Beispielhaft nach artist: SICK LEGEND
+   - Linear Search: 0.0817 seconds O(n)
+   - Hash Search: 0.043410 seconds O(1)
+   - LCG Search 0.0920 seconds O(n)
+   ###Sort
+   Beispielhaft nach Name 
+   - Buil-in Sort:  0.0180 seconds O(nlogn) aber worst auch O(nlogn)
+   - Quick Sort: 0.4395 seconds O(nlogn) aber worst O(n^2)
+   - Slow Sort 218.9488 seconds O(n^2)

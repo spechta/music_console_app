@@ -220,6 +220,6 @@ Der Benutzer kann durch die Auswahl im Menü verschiedene Funktionen der Anwendu
    - LCG Search 0.0920 seconds O(n)
    ### Sort
    Beispielhaft nach Name 
-   - Buil-in Sort:  0.0180 seconds O(nlogn) aber worst auch O(nlogn)
+   - Built-in Sort:  0.0180 seconds O(nlogn) aber worst auch O(nlogn)
    - Quick Sort: 0.4395 seconds O(nlogn) aber worst O(n^2)
    - Slow Sort 218.9488 seconds O(n^2)

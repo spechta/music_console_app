@@ -3,40 +3,38 @@ import os
 import random
 import time
 from tqdm import tqdm
-import unittest
-from unittest.mock import patch
 
 class Song:
-    def __init__(self, id, name, artist, album, genre, duration):
+    def __init__(self, id, name, artist, album, views, duration):
         self.id = id  
         self.name = name
         self.artist = artist
         self.album = album
-        self.genre = genre
+        self.views = views  
         self.duration = duration  
 
     def __str__(self):
-        return f"Song: {self.name}, Artist: {self.artist}, Album: {self.album}, Genre: {self.genre}, Duration: {self.duration / 60000:.2f} minutes"
+        return f"Song: {self.name}, Artist: {self.artist}, Album: {self.album}, Views: {self.views}, Duration: {self.duration:.2f} minutes"
 
     def to_dict(self):
         return {
             "id": self.id, 
-            "name": self.name,
-            "artist": self.artist,
-            "album": self.album,
-            "genre": self.genre,
-            "duration_ms": self.duration
+            "Track": self.name,  
+            "Artist": self.artist,
+            "Album": self.album,
+            "Views": self.views,  
+            "Duration_min": self.duration  
         }
 
     @staticmethod
     def from_dict(data):
         return Song(
-            id=data["id"],  
-            name=data["name"],
-            artist=data["artists"],
-            album=data["album"],
-            genre=data["genre"],
-            duration=data["duration_ms"]
+            id=data.get("id", -1), 
+            name=data["Track"],
+            artist=data["Artist"],
+            album=data["Album"],
+            views=data["Views"],
+            duration=data["Duration_min"]
         )
 
 class Playlist:
@@ -72,6 +70,7 @@ class MusicApp:
         self.data_file = data_file
         self.songs = []
         self.playlists = []
+        self.song_hash_maps = {}
         self.load_data()
 
     def load_data(self):
@@ -80,9 +79,14 @@ class MusicApp:
                 with open(self.data_file, 'r', encoding='utf-8') as file:
                     data = json.load(file)
 
+                    # Load and assign IDs to songs if they don't exist
                     if 'songs' in data:
-                        self.songs = [Song.from_dict(song) for song in data['songs']]
+                        for index, song_data in enumerate(data['songs']):
+                            if 'id' == -1:
+                                song_data['id'] = index + 1  # Assign a unique ID starting from 1
+                            self.songs.append(Song.from_dict(song_data))
 
+                    # Load playlists if present
                     if 'playlists' in data:
                         for pl_data in data['playlists']:
                             playlist = Playlist.from_dict(pl_data, self.songs)
@@ -105,15 +109,15 @@ class MusicApp:
 
     def add_song(self):
         """
-        Adds a new song to the music library
+        Adds a new song to the music library.
         """
         name = input("Enter the song name: ")
         artist = input("Enter the artist name: ")
         album = input("Enter the album name: ")
-        genre = input("Enter the genre: ")
-        duration = int(input("Enter the duration in milliseconds: "))
+        views = int(input("Enter the number of views: "))  
+        duration = float(input("Enter the duration in minutes: "))  
 
-        new_song = Song(len(self.songs) + 1, name, artist, album, genre, duration)
+        new_song = Song(len(self.songs) + 1, name, artist, album, views, duration)
         self.songs.append(new_song)
         print(f"Added {new_song}")
 
@@ -127,20 +131,26 @@ class MusicApp:
         print(f"Created playlist: {playlist.name}")
 
     def add_song_to_playlist(self):
-        """
-        Adds a song from the music library to a playlist
-        """
-        song_name = input("Enter the name of the song to add: ")
         playlist_name = input("Enter the name of the playlist: ")
+        song_name = input("Enter the song name: ")
 
+        # Find the playlist
+        playlist = next((p for p in self.playlists if p.name == playlist_name), None)
+        if playlist is None:
+            print(f"Playlist '{playlist_name}' not found.")
+            return  # Return if no playlist found
+
+        # Find the song
         song = next((s for s in self.songs if s.name == song_name), None)
-        playlist = next((pl for pl in self.playlists if pl.name == playlist_name), None)
+        if song is None:
+            print(f"Song '{song_name}' not found.")
+            return  # Return if no song found
 
-        if song and playlist:
-            playlist.add_song(song)
-            print(f"Added {song_name} to playlist {playlist_name}")
-        else:
-            print("Song or Playlist not found.")
+        # Add song to playlist
+        playlist.songs.append(song)
+        print(f"Added {song_name} to playlist {playlist_name}.")
+        return playlist  # Return the updated playlist
+
 
     def linear_search(self, search_term, attribute):
         """
@@ -163,31 +173,43 @@ class MusicApp:
             print(song)
         print(f"\nLinear Search completed in {end_time - start_time:.4f} seconds.")
         return results
+    
+    def build_hash_maps(self):
+        """
+        Build hash maps for various attributes to speed up hash searches.
+        """
+        attributes = ['name', 'artist', 'views', 'duration']
+        self.song_hash_maps = {attr: {} for attr in attributes}
+
+        for song in self.songs:
+            for attr in attributes:
+                value = getattr(song, attr)
+                if isinstance(value, str):
+                    value = value.lower()  # Normalize case for string attributes
+                if value not in self.song_hash_maps[attr]:
+                    self.song_hash_maps[attr][value] = []
+                self.song_hash_maps[attr][value].append(song)
 
     def hash_search(self, search_term, attribute):
         """
-        Efficient search method using a hash map (dictionary).
+        Efficient search method using a pre-built hash map (dictionary).
         Supports multiple results and different types.
         """
-        start_time = time.time()
-        song_map = {}
-
-        for song in tqdm(self.songs, desc="Building Hash Map", unit="song"):
-            value = getattr(song, attribute)
-            if isinstance(value, str):
-                value = value.lower()  
-            if value not in song_map:
-                song_map[value] = []
-            song_map[value].append(song)
-
+        if attribute not in self.song_hash_maps:
+            print(f"No hash map available for attribute '{attribute}'. Building hash maps...")
+            self.build_hash_maps()
+        
         search_term = search_term.lower() if isinstance(search_term, str) else search_term
-        results = song_map.get(search_term, [])
+        start_time = time.time()
+
+        # Retrieve the results from the pre-built hash map
+        results = self.song_hash_maps[attribute].get(search_term, [])
         
         end_time = time.time()
         print("\nSearch Results:")
         for song in results:
             print(song)
-        print(f"\nHash Search completed in {end_time - start_time:.4f} seconds.")
+        print(f"\nHash Search (with pre-built map) completed in {end_time - start_time:.6f} seconds.")
         return results
 
     def lcg_search(self, search_term, attribute):
@@ -249,11 +271,11 @@ class MusicApp:
         print("\nChoose search attribute:")
         print("1. Name")
         print("2. Artist")
-        print("3. Genre")
+        print("3. Views")
         print("4. Duration")
 
         attr_choice = input("Enter your choice (1/2/3/4): ").strip()
-        attribute = "name" if attr_choice == '1' else "artist" if attr_choice == '2' else "genre" if attr_choice == '3' else "duration" if attr_choice == '4' else None
+        attribute = "name" if attr_choice == '1' else "artist" if attr_choice == '2' else "views" if attr_choice == '3' else "duration" if attr_choice == '4' else None
 
         if attribute is None:
             print("Invalid choice. Search cancelled.")
@@ -267,6 +289,7 @@ class MusicApp:
             results = self.hash_search(search_term, attribute)
         elif algo_choice == '3':
             results = self.lcg_search(search_term, attribute)
+        return results  
 
     def built_in_sort(self, key):
         """
@@ -343,7 +366,7 @@ class MusicApp:
         print("\nChoose sort attribute:")
         print("1. Name")
         print("2. Artist")
-        print("3. Genre")
+        print("3. Views")
         print("4. Duration")
 
         attr_choice = input("Enter your choice (1/2/3/4): ").strip()
@@ -354,7 +377,7 @@ class MusicApp:
         elif attr_choice == '2':
             attribute = 'artist'
         elif attr_choice == '3':
-            attribute = 'genre'
+            attribute = 'views'
         elif attr_choice == '4':
             attribute = 'duration'
 
@@ -365,7 +388,7 @@ class MusicApp:
         # Sort using a custom key that handles type comparison
         def sort_key(song):
             value = getattr(song, attribute)
-            return str(value) if attribute != "duration" else value
+            return value if attribute == "views" or attribute == "duration" else str(value)
 
         if algo_choice == '1':
             self.built_in_sort(key=sort_key)
